@@ -9,10 +9,13 @@
     "longitud": -98.73255444,
     "capacidad_contenedor": 80,
     "avu_estimado": 72,
-    "estado": "Prospecto",
+    "estado": "Pendiente de recolección (simulación)",
     "prioridad": "Alta",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "A",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "6336507",
@@ -24,10 +27,13 @@
     "longitud": -98.73138528,
     "capacidad_contenedor": 60,
     "avu_estimado": 30,
-    "estado": "Prospecto",
+    "estado": "Pendiente de recolección (simulación)",
     "prioridad": "Media",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "B",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "1529514",
@@ -37,12 +43,15 @@
     "direccion": "BELISARIO DOMINGUEZ, 103, CENTRO, Pachuca de Soto",
     "latitud": 20.12271171,
     "longitud": -98.7352238,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 12,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Media",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "A",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "1593007",
@@ -52,12 +61,15 @@
     "direccion": "MIGUEL RAMOS ARIZPE, 403, CENTRO, Pachuca de Soto",
     "latitud": 20.12427561,
     "longitud": -98.73007646,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 14,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Media",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "B",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "1528971",
@@ -69,10 +81,13 @@
     "longitud": -98.7305888,
     "capacidad_contenedor": 40,
     "avu_estimado": 35,
-    "estado": "Prospecto",
+    "estado": "Pendiente de recolección (simulación)",
     "prioridad": "Alta",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "B",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "1592763",
@@ -82,12 +97,15 @@
     "direccion": "MARIANO ABASOLO, 303, CENTRO, Pachuca de Soto",
     "latitud": 20.12868311,
     "longitud": -98.73305169,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 10,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Baja",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "A",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "10092894",
@@ -97,12 +115,15 @@
     "direccion": "PLAZA DE LA INDEPENDENCIA, CENTRO, Pachuca de Soto",
     "latitud": 20.1275658,
     "longitud": -98.73218189,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 13,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Media",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "B",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "1525821",
@@ -112,12 +133,15 @@
     "direccion": "VENUSTIANO CARRANZA, 200, CENTRO, Pachuca de Soto",
     "latitud": 20.13029722,
     "longitud": -98.73014497,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 9,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Baja",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "B",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "7823974",
@@ -127,12 +151,15 @@
     "direccion": "JOSE MARIA MORELOS Y PAVON, 93, CENTRO, Pachuca de Soto",
     "latitud": 20.12843871,
     "longitud": -98.73013256,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 11,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Baja",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "B",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "1526427",
@@ -144,10 +171,13 @@
     "longitud": -98.73189037,
     "capacidad_contenedor": 30,
     "avu_estimado": 27,
-    "estado": "Prospecto",
+    "estado": "Pendiente de recolección (simulación)",
     "prioridad": "Alta",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "B",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "1526006",
@@ -157,12 +187,15 @@
     "direccion": "LERDO DE TEJADA, CENTRO, Pachuca de Soto",
     "latitud": 20.12860791,
     "longitud": -98.72940699,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 15,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Media",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "B",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "1593083",
@@ -172,12 +205,15 @@
     "direccion": "VICENTE GUERRERO, 1000, CENTRO, Pachuca de Soto",
     "latitud": 20.12579201,
     "longitud": -98.73429621,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 8,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Baja",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "A",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "7843757",
@@ -187,12 +223,15 @@
     "direccion": "MARIANO MATAMOROS, 411, CENTRO, Pachuca de Soto",
     "latitud": 20.12465592,
     "longitud": -98.73291181,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 12,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Media",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "A",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "1593109",
@@ -202,12 +241,15 @@
     "direccion": "GUZMAN MAYER, 199, CENTRO, Pachuca de Soto",
     "latitud": 20.12609495,
     "longitud": -98.73604984,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 14,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Media",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "A",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "1525457",
@@ -217,12 +259,15 @@
     "direccion": "VENUSTIANO CARRANZA, 0, CENTRO, Pachuca de Soto",
     "latitud": 20.13068794,
     "longitud": -98.73013843,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 10,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Baja",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "B",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "1529418",
@@ -232,12 +277,15 @@
     "direccion": "XICOTENCATL, 114, CENTRO, Pachuca de Soto",
     "latitud": 20.12300587,
     "longitud": -98.73430714,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 13,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Media",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "A",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "9568727",
@@ -247,12 +295,15 @@
     "direccion": "GUZMAN MAYER, CENTRO, Pachuca de Soto",
     "latitud": 20.12604265,
     "longitud": -98.73597156,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 11,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Baja",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "A",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "11844266",
@@ -262,12 +313,15 @@
     "direccion": "NICOLÁS ROMERO, 200, CENTRO, Pachuca de Soto",
     "latitud": 20.12660486,
     "longitud": -98.73524116,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 9,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Baja",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "A",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "7843061",
@@ -277,12 +331,15 @@
     "direccion": "JULIAN VILLAGRAN, 300, CENTRO, Pachuca de Soto",
     "latitud": 20.12946872,
     "longitud": -98.73091007,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 12,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Media",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "B",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "10166044",
@@ -292,12 +349,15 @@
     "direccion": "PLAZA DE LA INDEPENDENCIA, CENTRO, Pachuca de Soto",
     "latitud": 20.1274988,
     "longitud": -98.73155081,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 10,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Baja",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "B",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "7843458",
@@ -309,10 +369,13 @@
     "longitud": -98.73570513,
     "capacidad_contenedor": 60,
     "avu_estimado": 54,
-    "estado": "Prospecto",
+    "estado": "Pendiente de recolección (simulación)",
     "prioridad": "Alta",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "A",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "1595868",
@@ -322,12 +385,15 @@
     "direccion": "FRANCISCO I MADERO, 211, CENTRO, Pachuca de Soto",
     "latitud": 20.12020473,
     "longitud": -98.7355104,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 14,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Media",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "A",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "1529365",
@@ -337,12 +403,15 @@
     "direccion": "CAYETANO GOMEZ PEREZ, 104, CENTRO, Pachuca de Soto",
     "latitud": 20.12321436,
     "longitud": -98.73790306,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 8,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Baja",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "A",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "8240793",
@@ -352,12 +421,15 @@
     "direccion": "VENUSTIANO CARRANZA, CENTRO, Pachuca de Soto",
     "latitud": 20.13140022,
     "longitud": -98.72997563,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 13,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Media",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "B",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   },
   {
     "id_denue": "11174846",
@@ -367,11 +439,14 @@
     "direccion": "IGNACIO TRIGUEROS OLEA, 201, CENTRO, Pachuca de Soto",
     "latitud": 20.12591683,
     "longitud": -98.73719042,
-    "capacidad_contenedor": null,
-    "avu_estimado": null,
-    "estado": "Prospecto",
-    "prioridad": "Sin evaluar",
+    "capacidad_contenedor": 20,
+    "avu_estimado": 11,
+    "estado": "Pendiente de recolección (simulación)",
+    "prioridad": "Baja",
     "fuente": "DENUE / Google My Maps (capa piloto)",
-    "volumen_verificado": false
+    "volumen_verificado": false,
+    "ruta_simulada": "A",
+    "datos_simulados": true,
+    "nota_simulacion": "Volumen, prioridad, capacidad de contenedor y asignación de ruta hipotéticos para demostración. No representa un acuerdo de recolección."
   }
 ]
