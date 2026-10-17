@@ -2,9 +2,9 @@
 'use strict';
 
 /*
- BIOGIRO v2.3
- Simulador académico de recolección de AVU.
- Rutas A y B, planta, comparación, CSV y analítica.
+ BIOGIRO v2.4
+ Circular Nexum Industries
+ Gestión logística y simulación académica de AVU.
 */
 
 const CONFIG = {
@@ -16,19 +16,22 @@ const CONFIG = {
 };
 
 const $ = id => document.getElementById(id);
-const seleccion = new Map();
-const resultados = { A: null, B: null };
 
-let datos = [];
+let establecimientos = [];
 let visibles = [];
 let escenario = null;
+let tipoRuta = 'rutina';
 let planta = null;
 let marcadorPlanta = null;
-let ajustarPlanta = false;
+let ajustandoPlanta = false;
 let lineaRuta = null;
 let controlador = null;
 let solicitud = 0;
 let ordenActual = null;
+
+const seleccion = new Map();
+const manual = new Map();
+const resultados = { A: null, B: null };
 
 const mapa = L.map('map').setView(CONFIG.centro, 15);
 
@@ -38,6 +41,21 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(mapa);
 
 const capaProveedores = L.featureGroup().addTo(mapa);
+
+const iconoPlanta = L.divIcon({
+    className: '',
+    html: `<div style="
+        width:48px;height:48px;border-radius:50%;
+        background:#173c29;color:white;
+        border:4px solid white;box-shadow:0 3px 12px #0005;
+        display:flex;align-items:center;justify-content:center;
+        font-size:23px">
+        <i class="bi bi-building-gear"></i>
+    </div>`,
+    iconSize: [48, 48],
+    iconAnchor: [24, 24],
+    popupAnchor: [0, -24]
+});
 
 function iconoProveedor(activo) {
     return L.divIcon({
@@ -51,28 +69,16 @@ function iconoProveedor(activo) {
     });
 }
 
-const iconoPlanta = L.divIcon({
-    className: '',
-    html: `<div style="
-        width:48px;height:48px;border-radius:50%;
-        background:#173c29;color:white;
-        border:4px solid white;box-shadow:0 3px 12px #0005;
-        display:flex;align-items:center;justify-content:center;
-        font-size:23px">
-        <i class="bi bi-building-gear"></i></div>`,
-    iconSize: [48, 48],
-    iconAnchor: [24, 24],
-    popupAnchor: [0, -24]
-});
-
 function escribir(id, valor) {
-    if ($(id)) $(id).textContent = String(valor);
+    const el = $(id);
+    if (el) el.textContent = String(valor);
 }
 
 function numero(valor) {
     if (valor === null || valor === undefined || valor === '') {
         return null;
     }
+
     const n = Number(valor);
     return Number.isFinite(n) && n >= 0 ? n : null;
 }
@@ -91,108 +97,181 @@ function coordenadaValida(p) {
     const lat = Number(p.latitud);
     const lng = Number(p.longitud);
 
-    return Number.isFinite(lat) && Number.isFinite(lng) &&
-        Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+    return Number.isFinite(lat) &&
+        Number.isFinite(lng) &&
+        Math.abs(lat) <= 90 &&
+        Math.abs(lng) <= 180;
 }
 
 function totalizar(lista) {
     return {
-        litros: lista.reduce((s, p) => s + (volumen(p) ?? 0), 0),
-        pendientes: lista.filter(p => volumen(p) === null).length
+        litros: lista.reduce(
+            (s, p) => s + (volumen(p) ?? 0), 0
+        ),
+        pendientes: lista.filter(
+            p => volumen(p) === null
+        ).length
     };
 }
 
 function grupo(letra) {
-    return datos.filter(p => p.ruta_simulada === letra);
+    return establecimientos.filter(
+        p => p.ruta_simulada === letra
+    );
 }
 
-function crearCelda(tr, valor, encabezado = false) {
-    const celda = document.createElement(encabezado ? 'th' : 'td');
-    celda.textContent = String(valor ?? '');
-    tr.appendChild(celda);
-    return celda;
+function celda(tr, valor, encabezado = false) {
+    const td = document.createElement(
+        encabezado ? 'th' : 'td'
+    );
+    td.textContent = String(valor ?? '');
+    tr.appendChild(td);
+    return td;
 }
 
-function crearFila(tbody, valores) {
+function fila(tbody, valores) {
     const tr = document.createElement('tr');
-    valores.forEach((v, i) => crearCelda(tr, v, i === 0));
+    valores.forEach((v, i) => celda(tr, v, i === 0));
     tbody.appendChild(tr);
 }
 
-function mensaje(texto) {
-    escribir('estado-recorrido', texto);
+function aviso(mensaje, error = false) {
+    const el = $('app-notice');
+    el.textContent = mensaje;
+    el.classList.toggle('error', error);
+    el.hidden = false;
 }
 
-/* PLANTA */
+function mensajeRuta(mensaje) {
+    escribir('estado-recorrido', mensaje);
+}
 
-function crearPanelPlanta() {
-    const panel = document.createElement('div');
-    panel.id = 'panel-planta';
-    panel.style.cssText = `
-        background:#f0f8f2;border:1px solid #d7e7db;
-        border-radius:14px;padding:20px;margin-bottom:22px`;
+/* ==========================================
+   NAVEGACIÓN ENTRE MÓDULOS
+========================================== */
 
-    panel.innerHTML = `
-        <h3 class="h6 fw-bold">
-            <i class="bi bi-building-gear me-2"></i>
-            Planta de producción BIOGIRO
-        </h3>
-        <p class="small mb-2">
-            <strong>Ubicación hipotética:</strong> ${CONFIG.direccion}
-        </p>
-        <p id="estado-planta" class="small text-muted"
-           role="status">Buscando ubicación...</p>
-        <div class="d-flex flex-wrap gap-2">
-            <button id="btn-ver-planta" type="button"
-                class="btn btn-outline-success btn-sm" disabled>
-                Ver planta
-            </button>
-            <button id="btn-ajustar-planta" type="button"
-                class="btn btn-outline-secondary btn-sm">
-                Ajustar ubicación
-            </button>
-        </div>
-        <p class="small text-muted mt-3 mb-0">
-            Comprueba el punto sobre el mapa.
-            La dirección puede geocodificarse de forma aproximada.
-        </p>`;
+function cerrarMenu() {
+    $('sidebar').classList.remove('open');
+    $('mobile-overlay').classList.remove('open');
+    $('menu-toggle').setAttribute('aria-expanded', 'false');
+}
 
-    const seccion = $('rutas');
-    const encabezado = seccion.querySelector('.section-heading');
+function navegar(id) {
+    const vista = $(id);
 
-    if (encabezado) encabezado.after(panel);
-    else seccion.prepend(panel);
+    if (!vista || !vista.classList.contains('app-view')) {
+        return;
+    }
 
-    $('btn-ver-planta').addEventListener('click', () => {
-        if (!planta) return;
-        $('map').scrollIntoView({ behavior: 'smooth' });
-        setTimeout(() => {
-            mapa.invalidateSize();
-            mapa.setView([planta.latitud, planta.longitud], 17);
-            marcadorPlanta.openPopup();
-        }, 250);
+    document.querySelectorAll('.app-view').forEach(v => {
+        v.classList.toggle('active', v.id === id);
     });
 
-    $('btn-ajustar-planta').addEventListener('click', () => {
-        ajustarPlanta = !ajustarPlanta;
-        const boton = $('btn-ajustar-planta');
-        boton.textContent = ajustarPlanta
-            ? 'Cancelar ajuste'
-            : 'Ajustar ubicación';
-        boton.classList.toggle('btn-warning', ajustarPlanta);
-        boton.classList.toggle(
-            'btn-outline-secondary',
-            !ajustarPlanta
-        );
+    document.querySelectorAll('.sidebar-nav .nav-link')
+        .forEach(boton => {
+            const activo = boton.dataset.view === id;
+            boton.classList.toggle('active', activo);
 
-        if (ajustarPlanta) {
-            escribir(
-                'estado-planta',
-                'Haz clic en el mapa para colocar la planta.'
-            );
-            $('map').scrollIntoView({ behavior: 'smooth' });
-        }
-    });
+            if (activo) {
+                boton.setAttribute('aria-current', 'page');
+            } else {
+                boton.removeAttribute('aria-current');
+            }
+        });
+
+    escribir('page-title', vista.dataset.title);
+    escribir('page-description', vista.dataset.description);
+
+    cerrarMenu();
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (id === 'mapa') {
+        setTimeout(() => mapa.invalidateSize(), 120);
+    }
+}
+
+document.querySelectorAll('[data-view]').forEach(boton => {
+    boton.addEventListener('click', () =>
+        navegar(boton.dataset.view)
+    );
+});
+
+document.querySelectorAll('[data-go]').forEach(boton => {
+    boton.addEventListener('click', () =>
+        navegar(boton.dataset.go)
+    );
+});
+
+$('menu-toggle').addEventListener('click', () => {
+    const abierto = $('sidebar').classList.toggle('open');
+    $('mobile-overlay').classList.toggle('open', abierto);
+    $('menu-toggle').setAttribute(
+        'aria-expanded', String(abierto)
+    );
+});
+
+$('mobile-overlay').addEventListener('click', cerrarMenu);
+
+document.addEventListener('keydown', evento => {
+    if (evento.key === 'Escape') cerrarMenu();
+});
+
+/* ==========================================
+   PESTAÑAS DE RUTAS
+========================================== */
+
+function cambiarPestana(tipo) {
+    tipoRuta = tipo;
+
+    const rutina = tipo === 'rutina';
+
+    $('panel-rutina').hidden = !rutina;
+    $('panel-manual').hidden = rutina;
+
+    $('tab-rutina').classList.toggle('active', rutina);
+    $('tab-manual').classList.toggle('active', !rutina);
+
+    $('tab-rutina').setAttribute(
+        'aria-selected', String(rutina)
+    );
+
+    $('tab-manual').setAttribute(
+        'aria-selected', String(!rutina)
+    );
+}
+
+$('tab-rutina').addEventListener(
+    'click', () => cambiarPestana('rutina')
+);
+
+$('tab-manual').addEventListener(
+    'click', () => cambiarPestana('manual')
+);
+
+/* ==========================================
+   PLANTA
+========================================== */
+
+function invalidarRecorrido() {
+    solicitud++;
+
+    if (controlador) {
+        controlador.abort();
+        controlador = null;
+    }
+
+    if (lineaRuta) {
+        mapa.removeLayer(lineaRuta);
+        lineaRuta = null;
+    }
+
+    ordenActual = null;
+
+    escribir('ruta-distancia', 'Sin calcular');
+    escribir('ruta-tiempo', 'Sin calcular');
+
+    $('btn-calcular-recorrido').disabled = false;
 }
 
 function establecerPlanta(latitud, longitud, origen) {
@@ -205,7 +284,8 @@ function establecerPlanta(latitud, longitud, origen) {
     ) return;
 
     const cambio = !planta ||
-        planta.latitud !== lat || planta.longitud !== lng;
+        planta.latitud !== lat ||
+        planta.longitud !== lng;
 
     planta = { latitud: lat, longitud: lng, origen };
 
@@ -218,13 +298,15 @@ function establecerPlanta(latitud, longitud, origen) {
         marcadorPlanta.setLatLng([lat, lng]);
     }
 
-    const popup = document.createElement('div');
-    const nombre = document.createElement('strong');
-    nombre.textContent = 'PLANTA BIOGIRO';
+    const contenido = document.createElement('div');
+    const titulo = document.createElement('strong');
     const direccion = document.createElement('p');
+
+    titulo.textContent = 'PLANTA CIRCULAR NEXUM';
     direccion.textContent = CONFIG.direccion;
-    popup.append(nombre, direccion);
-    marcadorPlanta.bindPopup(popup);
+
+    contenido.append(titulo, direccion);
+    marcadorPlanta.bindPopup(contenido);
 
     $('btn-ver-planta').disabled = false;
 
@@ -252,10 +334,16 @@ async function localizarPlanta() {
             countrycodes: 'mx'
         });
 
-        const respuesta = await fetch(`${CONFIG.geocoder}?${params}`);
-        if (!respuesta.ok) throw new Error('Geocodificación no disponible');
+        const respuesta = await fetch(
+            `${CONFIG.geocoder}?${params}`
+        );
+
+        if (!respuesta.ok) {
+            throw new Error('Geocodificación no disponible');
+        }
 
         const opciones = await respuesta.json();
+
         const punto = opciones.find(p =>
             Number(p.lat) >= 20.10 &&
             Number(p.lat) <= 20.15 &&
@@ -263,36 +351,86 @@ async function localizarPlanta() {
             Number(p.lon) <= -98.70
         );
 
-        if (!punto) throw new Error('Sin coincidencia confiable');
+        if (!punto) {
+            throw new Error('No se encontró coincidencia confiable');
+        }
+
+        // No sobrescribir un ajuste manual realizado mientras
+        // estaba pendiente la búsqueda automática.
+        if (planta) return;
 
         establecerPlanta(
-            punto.lat,
-            punto.lon,
-            'Ubicación aproximada'
+            punto.lat, punto.lon, 'Ubicación aproximada'
         );
+
     } catch (error) {
         console.warn(error);
-        escribir(
-            'estado-planta',
-            'No se encontró la dirección. Usa Ajustar ubicación.'
-        );
+
+        if (!planta) {
+            escribir(
+                'estado-planta',
+                'No se encontró automáticamente. ' +
+                'Usa Ajustar ubicación.'
+            );
+        }
     }
 }
 
+$('btn-ver-planta').addEventListener('click', () => {
+    if (!planta) return;
+
+    navegar('mapa');
+
+    setTimeout(() => {
+        mapa.invalidateSize();
+        mapa.setView([planta.latitud, planta.longitud], 17);
+        marcadorPlanta.openPopup();
+    }, 200);
+});
+
+$('btn-ajustar-planta').addEventListener('click', () => {
+    ajustandoPlanta = !ajustandoPlanta;
+
+    $('btn-ajustar-planta').textContent = ajustandoPlanta
+        ? 'Cancelar ajuste'
+        : 'Ajustar ubicación';
+
+    if (ajustandoPlanta) {
+        escribir(
+            'estado-planta',
+            'Haz clic sobre el mapa para colocar la planta.'
+        );
+        navegar('mapa');
+        aviso('Selecciona en el mapa la ubicación de la planta.');
+    } else if (planta) {
+        escribir(
+            'estado-planta',
+            `${planta.origen}: ` +
+            `${planta.latitud.toFixed(6)}, ` +
+            `${planta.longitud.toFixed(6)}`
+        );
+    }
+});
+
 mapa.on('click', evento => {
-    if (!ajustarPlanta) return;
+    if (!ajustandoPlanta) return;
 
     establecerPlanta(
         evento.latlng.lat,
         evento.latlng.lng,
-        'Ubicación manual'
+        'Ubicación ajustada manualmente'
     );
 
-    $('btn-ajustar-planta').click();
+    ajustandoPlanta = false;
+    $('btn-ajustar-planta').textContent = 'Ajustar ubicación';
+
     marcadorPlanta.openPopup();
+    aviso('Ubicación de la planta actualizada.');
 });
 
-/* DIRECTORIO Y MAPA */
+/* ==========================================
+   MAPA Y DIRECTORIO
+========================================== */
 
 function mostrarMarcadores(lista, ajustar = true) {
     visibles = [...lista];
@@ -302,31 +440,37 @@ function mostrarMarcadores(lista, ajustar = true) {
         if (!coordenadaValida(p)) return;
 
         const activo = seleccion.has(String(p.id_denue));
+
         const marcador = L.marker(
             [Number(p.latitud), Number(p.longitud)],
             { icon: iconoProveedor(activo) }
         );
 
-        const contenido = document.createElement('div');
+        const popup = document.createElement('div');
         const titulo = document.createElement('strong');
         titulo.textContent = p.nombre || 'Sin nombre';
-        contenido.appendChild(titulo);
+        popup.appendChild(titulo);
 
         [
             p.direccion || 'Sin dirección',
-            `AVU estimado: ${volumen(p) ?? 'Pendiente'} L`,
+            `AVU habitual: ${volumen(p) ?? 'Pendiente'} L`,
             `Ruta: ${p.ruta_simulada || 'Sin asignar'}`
-        ].forEach(linea => {
+        ].forEach(texto => {
             const parrafo = document.createElement('p');
-            parrafo.textContent = linea;
-            contenido.appendChild(parrafo);
+            parrafo.textContent = texto;
+            popup.appendChild(parrafo);
         });
 
-        marcador.bindPopup(contenido);
+        marcador.bindPopup(popup);
         capaProveedores.addLayer(marcador);
     });
 
-    if (ajustar && capaProveedores.getLayers().length) {
+    // No intentar ajustar el mapa si su módulo está oculto.
+    if (
+        ajustar &&
+        $('mapa').classList.contains('active') &&
+        capaProveedores.getLayers().length
+    ) {
         mapa.fitBounds(capaProveedores.getBounds(), {
             padding: [40, 40],
             maxZoom: 16
@@ -340,7 +484,7 @@ function mostrarTabla(lista) {
 
     if (!lista.length) {
         const tr = document.createElement('tr');
-        const td = crearCelda(tr, 'No hay resultados');
+        const td = celda(tr, 'Sin resultados');
         td.colSpan = 6;
         tbody.appendChild(tr);
         return;
@@ -348,7 +492,7 @@ function mostrarTabla(lista) {
 
     lista.forEach(p => {
         const tr = document.createElement('tr');
-        const td = document.createElement('td');
+        const tdCheck = document.createElement('td');
         const check = document.createElement('input');
 
         check.type = 'checkbox';
@@ -358,29 +502,36 @@ function mostrarTabla(lista) {
             'aria-label',
             `Seleccionar ${p.nombre || p.id_denue}`
         );
-        check.addEventListener('change', () =>
-            seleccionarProveedor(p, check.checked)
-        );
 
-        td.appendChild(check);
-        tr.appendChild(td);
+        check.addEventListener('change', () => {
+            seleccionarDesdeDirectorio(p, check.checked);
+        });
 
-        crearCelda(tr, p.nombre || 'Sin nombre');
-        crearCelda(tr, p.actividad || 'Sin actividad');
-        crearCelda(
+        tdCheck.appendChild(check);
+        tr.appendChild(tdCheck);
+
+        celda(tr, p.nombre || 'Sin nombre');
+        celda(tr, p.actividad || 'No especificada');
+
+        celda(
             tr,
-            volumen(p) === null ? 'Pendiente' : `${volumen(p)} L`
+            volumen(p) === null
+                ? 'Pendiente'
+                : `${volumen(p)} L`
         );
 
         const tdPrioridad = document.createElement('td');
         const badge = document.createElement('span');
         const prioridad = p.prioridad || 'Sin evaluar';
-        badge.className = `priority-badge ${prioridad.toLowerCase()}`;
+
+        badge.className =
+            `priority-badge ${prioridad.toLowerCase()}`;
         badge.textContent = prioridad;
+
         tdPrioridad.appendChild(badge);
         tr.appendChild(tdPrioridad);
 
-        crearCelda(tr, p.estado || 'Prospecto');
+        celda(tr, p.estado || 'Prospecto');
         tbody.appendChild(tr);
     });
 }
@@ -388,45 +539,50 @@ function mostrarTabla(lista) {
 function aplicarFiltros() {
     const q = $('buscar-establecimiento')
         .value.toLocaleLowerCase('es').trim();
+
     const prioridad = $('filtro-prioridad').value;
 
-    const lista = datos.filter(p => {
+    const lista = establecimientos.filter(p => {
         const cadena = [
             p.nombre, p.actividad, p.id_denue
         ].join(' ').toLocaleLowerCase('es');
 
         return cadena.includes(q) &&
-            (prioridad === 'todos' || p.prioridad === prioridad);
+            (prioridad === 'todos' ||
+             p.prioridad === prioridad);
     });
 
     mostrarTabla(lista);
-    mostrarMarcadores(lista);
+    mostrarMarcadores(lista, false);
+
     escribir(
         'contador-resultados',
-        `${lista.length} de ${datos.length} resultados`
+        `${lista.length} de ${establecimientos.length} resultados`
     );
 }
 
-/* SELECCIÓN Y RUTAS */
+$('buscar-establecimiento').addEventListener(
+    'input', aplicarFiltros
+);
 
-function invalidarRecorrido() {
-    solicitud++;
+$('filtro-prioridad').addEventListener(
+    'change', aplicarFiltros
+);
 
-    if (controlador) {
-        controlador.abort();
-        controlador = null;
+$('btn-centrar-mapa').addEventListener('click', () => {
+    mapa.invalidateSize();
+
+    if (capaProveedores.getLayers().length) {
+        mapa.fitBounds(capaProveedores.getBounds(), {
+            padding: [40, 40],
+            maxZoom: 16
+        });
     }
+});
 
-    if (lineaRuta) {
-        mapa.removeLayer(lineaRuta);
-        lineaRuta = null;
-    }
-
-    ordenActual = null;
-    escribir('ruta-distancia', 'Sin calcular');
-    escribir('ruta-tiempo', 'Sin calcular');
-    $('btn-calcular-recorrido').disabled = false;
-}
+/* ==========================================
+   SELECCIÓN DE RUTAS
+========================================== */
 
 function activarEscenario(letra) {
     escenario = letra;
@@ -434,42 +590,277 @@ function activarEscenario(letra) {
     ['A', 'B'].forEach(clave => {
         const boton = $(`btn-ruta-${clave.toLowerCase()}`);
         const activo = clave === letra;
+
         boton.classList.toggle('activa', activo);
         boton.setAttribute('aria-pressed', String(activo));
     });
 }
 
-function seleccionarProveedor(p, activo) {
+function cargarEscenario(letra) {
+    const lista = grupo(letra);
+
+    if (!lista.length) {
+        aviso(`La Ruta ${letra} no tiene establecimientos.`, true);
+        return;
+    }
+
     invalidarRecorrido();
-    activarEscenario(null);
+    seleccion.clear();
 
-    if (activo) seleccion.set(String(p.id_denue), p);
-    else seleccion.delete(String(p.id_denue));
+    lista.forEach(p => {
+        seleccion.set(String(p.id_denue), { ...p });
+    });
 
-    mostrarTabla(visibles);
-    mostrarMarcadores(visibles, false);
+    activarEscenario(letra);
+    cambiarPestana('rutina');
+
+    escribir('tipo-ruta-activa', `Ruta de rutina ${letra}`);
+
     actualizarPanelRuta();
+    aplicarFiltros();
 
-    mensaje('Selección modificada. Calcula el circuito nuevamente.');
+    mensajeRuta(
+        `Ruta ${letra} cargada. Calcula el circuito vial.`
+    );
+
+    aviso(`Ruta de rutina ${letra} preparada.`);
 }
 
-function agregarParada(lista, nombre, detalle, especial = false) {
+$('btn-ruta-a').addEventListener(
+    'click', () => cargarEscenario('A')
+);
+
+$('btn-ruta-b').addEventListener(
+    'click', () => cargarEscenario('B')
+);
+
+function seleccionarDesdeDirectorio(p, activo) {
+    // La selección directa crea una ruta manual.
+    // Se conservan los volúmenes habituales como valor inicial.
+    invalidarRecorrido();
+    activarEscenario(null);
+    cambiarPestana('manual');
+
+    const id = String(p.id_denue);
+
+    if (activo) {
+        if (!manual.has(id)) {
+            manual.set(id, volumen(p) ?? 0);
+        }
+    } else {
+        manual.delete(id);
+    }
+
+    sincronizarSeleccionManual();
+
+    escribir('tipo-ruta-activa', 'Ruta manual');
+    mensajeRuta(
+        'Selección manual modificada. Calcula el recorrido.'
+    );
+}
+
+$('btn-ir-ruta').addEventListener('click', () => {
+    cambiarPestana(escenario ? 'rutina' : 'manual');
+    navegar('rutas');
+});
+
+/* ==========================================
+   RUTAS MANUALES
+========================================== */
+
+function mostrarTablaManual() {
+    const tbody = $('tabla-manual');
+    tbody.replaceChildren();
+
+    const q = $('manual-buscar')
+        .value.toLocaleLowerCase('es').trim();
+
+    const lista = establecimientos.filter(p =>
+        [p.nombre, p.id_denue]
+            .join(' ')
+            .toLocaleLowerCase('es')
+            .includes(q)
+    );
+
+    escribir(
+        'manual-contador',
+        `${lista.length} establecimientos`
+    );
+
+    lista.forEach(p => {
+        const id = String(p.id_denue);
+        const tr = document.createElement('tr');
+
+        const tdCheck = document.createElement('td');
+        const check = document.createElement('input');
+
+        check.type = 'checkbox';
+        check.className = 'checkbox-ruta';
+        check.checked = manual.has(id);
+        check.setAttribute(
+            'aria-label',
+            `Agregar ${p.nombre || id}`
+        );
+
+        tdCheck.appendChild(check);
+        tr.appendChild(tdCheck);
+
+        celda(tr, p.nombre || 'Sin nombre');
+
+        celda(
+            tr,
+            volumen(p) === null
+                ? 'Sin dato'
+                : `${volumen(p)} L`
+        );
+
+        const tdVolumen = document.createElement('td');
+        const input = document.createElement('input');
+
+        input.type = 'number';
+        input.className = 'manual-volume';
+        input.min = '0';
+        input.max = String(CONFIG.capacidad);
+        input.step = '0.1';
+        input.disabled = !manual.has(id);
+
+        input.value = manual.has(id)
+            ? String(manual.get(id))
+            : String(volumen(p) ?? 0);
+
+        input.setAttribute(
+            'aria-label',
+            `Litros disponibles en ${p.nombre || id}`
+        );
+
+        tdVolumen.appendChild(input);
+        tr.appendChild(tdVolumen);
+
+        check.addEventListener('change', () => {
+            if (check.checked) {
+                const valor = numero(input.value);
+
+                manual.set(
+                    id,
+                    valor === null
+                        ? (volumen(p) ?? 0)
+                        : valor
+                );
+            } else {
+                manual.delete(id);
+            }
+
+            input.disabled = !check.checked;
+
+            if (check.checked) {
+                input.value = String(manual.get(id));
+            }
+
+            sincronizarSeleccionManual();
+        });
+
+        input.addEventListener('change', () => {
+            const valor = numero(input.value);
+
+            if (
+                valor === null ||
+                valor > CONFIG.capacidad
+            ) {
+                aviso(
+                    `Introduce un volumen entre 0 y ` +
+                    `${CONFIG.capacidad} L.`,
+                    true
+                );
+
+                input.value = String(manual.get(id) ?? 0);
+                return;
+            }
+
+            manual.set(id, valor);
+            sincronizarSeleccionManual();
+        });
+
+        tbody.appendChild(tr);
+    });
+}
+
+function sincronizarSeleccionManual() {
+    invalidarRecorrido();
+    seleccion.clear();
+    activarEscenario(null);
+
+    establecimientos.forEach(p => {
+        const id = String(p.id_denue);
+
+        if (!manual.has(id)) return;
+
+        seleccion.set(id, {
+            ...p,
+            avu_estimado: manual.get(id)
+        });
+    });
+
+    escribir('tipo-ruta-activa', 'Ruta manual');
+
+    const { litros } = totalizar([...seleccion.values()]);
+
+    escribir('manual-total-paradas', seleccion.size);
+    escribir('manual-total-litros', `${litros.toFixed(1)} L`);
+
+    actualizarPanelRuta();
+    aplicarFiltros();
+}
+
+$('manual-buscar').addEventListener(
+    'input', mostrarTablaManual
+);
+
+$('btn-aplicar-manual').addEventListener('click', () => {
+    sincronizarSeleccionManual();
+
+    if (!seleccion.size) {
+        aviso('Selecciona al menos un establecimiento.', true);
+        return;
+    }
+
+    cambiarPestana('manual');
+
+    aviso(
+        `Ruta manual preparada: ${seleccion.size} paradas.`
+    );
+
+    mensajeRuta(
+        'Ruta extraordinaria preparada. Calcula el circuito.'
+    );
+});
+
+$('btn-limpiar-manual').addEventListener('click', () => {
+    manual.clear();
+    sincronizarSeleccionManual();
+    mostrarTablaManual();
+    mensajeRuta('Ruta manual limpiada.');
+    aviso('Selección manual limpiada.');
+});
+
+/* ==========================================
+   MÉTRICAS Y PARADAS
+========================================== */
+
+function agregarParada(ul, nombre, detalle, plantaStop = false) {
     const li = document.createElement('li');
     const span1 = document.createElement('span');
     const span2 = document.createElement('span');
 
     span1.className = 'stop-name';
     span2.className = 'stop-volume';
+
     span1.textContent = nombre;
     span2.textContent = detalle;
 
-    if (especial) {
-        li.style.background = '#e7f5e9';
-        li.style.borderColor = '#b6d9bd';
-    }
+    if (plantaStop) li.classList.add('plant-stop');
 
     li.append(span1, span2);
-    lista.appendChild(li);
+    ul.appendChild(li);
 }
 
 function actualizarPanelRuta() {
@@ -483,43 +874,67 @@ function actualizarPanelRuta() {
     escribir('ruta-porcentaje', `${porcentaje.toFixed(1)}%`);
 
     const progreso = $('ruta-progreso');
-    progreso.style.width = `${Math.min(porcentaje, 100)}%`;
+
+    progreso.style.width =
+        `${Math.min(100, porcentaje)}%`;
+
     progreso.setAttribute(
         'aria-valuenow',
-        String(Math.min(porcentaje, 100))
+        String(Math.min(100, porcentaje))
     );
-    progreso.classList.toggle('bg-danger', porcentaje > 100);
+
+    progreso.classList.toggle(
+        'bg-danger', porcentaje > 100
+    );
 
     const ul = $('lista-ruta');
     ul.replaceChildren();
 
     if (!lista.length) {
-        agregarParada(ul, 'Selecciona una ruta o establecimientos', '');
+        agregarParada(
+            ul,
+            'Selecciona una ruta o establecimientos.',
+            ''
+        );
         return;
     }
 
     if (planta) {
-        agregarParada(ul, 'Salida: Planta BIOGIRO', 'Planta', true);
+        agregarParada(
+            ul,
+            'Salida: Planta Circular Nexum',
+            'Planta',
+            true
+        );
     }
 
-    (ordenActual || lista).forEach(p =>
+    (ordenActual || lista).forEach(p => {
         agregarParada(
             ul,
             p.nombre || 'Sin nombre',
-            volumen(p) === null ? 'Pendiente' : `${volumen(p)} L`
-        )
-    );
+            `${volumen(p) ?? 'Pendiente'} L`
+        );
+    });
 
     if (planta) {
-        agregarParada(ul, 'Regreso: Planta BIOGIRO', 'Planta', true);
-    }
-
-    if (porcentaje > 100 || pendientes) {
         agregarParada(
             ul,
-            porcentaje > 100
-                ? 'Capacidad del vehículo superada'
-                : 'Hay volúmenes sin evaluar',
+            'Regreso: Planta Circular Nexum',
+            'Planta',
+            true
+        );
+    }
+
+    if (porcentaje > 100) {
+        agregarParada(
+            ul,
+            'Capacidad del vehículo superada',
+            'Aviso'
+        );
+    } else if (pendientes) {
+        agregarParada(
+            ul,
+            'Hay volúmenes pendientes',
             'Aviso'
         );
     }
@@ -528,19 +943,28 @@ function actualizarPanelRuta() {
 function mostrarSeleccionEnMapa() {
     const puntos = [...seleccion.values()]
         .filter(coordenadaValida)
-        .map(p => [Number(p.latitud), Number(p.longitud)]);
+        .map(p => [
+            Number(p.latitud),
+            Number(p.longitud)
+        ]);
 
-    if (planta) puntos.push([planta.latitud, planta.longitud]);
+    if (planta) {
+        puntos.push([
+            planta.latitud,
+            planta.longitud
+        ]);
+    }
 
     if (!puntos.length) {
-        alert('Selecciona establecimientos.');
+        aviso('Selecciona establecimientos.', true);
         return;
     }
 
-    $('map').scrollIntoView({ behavior: 'smooth' });
+    navegar('mapa');
 
     setTimeout(() => {
         mapa.invalidateSize();
+
         if (puntos.length === 1) {
             mapa.setView(puntos[0], 16);
         } else {
@@ -549,45 +973,55 @@ function mostrarSeleccionEnMapa() {
                 maxZoom: 16
             });
         }
-    }, 250);
+    }, 200);
 }
 
-function cargarEscenario(letra) {
-    const lista = grupo(letra);
+$('btn-ver-seleccion').addEventListener(
+    'click', mostrarSeleccionEnMapa
+);
 
-    if (!lista.length) {
-        alert(`La Ruta ${letra} no tiene establecimientos.`);
-        return;
-    }
-
+$('btn-limpiar-ruta').addEventListener('click', () => {
     invalidarRecorrido();
     seleccion.clear();
+    manual.clear();
+    activarEscenario(null);
 
-    lista.forEach(p => seleccion.set(String(p.id_denue), p));
-    activarEscenario(letra);
+    escribir(
+        'tipo-ruta-activa',
+        'Ningún recorrido seleccionado.'
+    );
 
-    $('buscar-establecimiento').value = '';
-    $('filtro-prioridad').value = 'todos';
-
-    aplicarFiltros();
     actualizarPanelRuta();
-    mostrarSeleccionEnMapa();
+    aplicarFiltros();
+    mostrarTablaManual();
 
-    mensaje(`Ruta ${letra} cargada. Calcula el circuito vial.`);
-}
+    mensajeRuta('Selección limpiada.');
+    aviso('Recorrido seleccionado limpiado.');
+});
+
+/* ==========================================
+   CÁLCULO VIAL
+========================================== */
 
 function distanciaGeografica(a, b) {
     const rad = grados => grados * Math.PI / 180;
+
     const lat1 = rad(Number(a.latitud));
     const lat2 = rad(Number(b.latitud));
-    const dLat = lat2 - lat1;
-    const dLng = rad(Number(b.longitud) - Number(a.longitud));
 
-    const h = Math.sin(dLat / 2) ** 2 +
+    const dLat = lat2 - lat1;
+    const dLng = rad(
+        Number(b.longitud) - Number(a.longitud)
+    );
+
+    const h =
+        Math.sin(dLat / 2) ** 2 +
         Math.cos(lat1) * Math.cos(lat2) *
         Math.sin(dLng / 2) ** 2;
 
-    return 12742000 * Math.asin(Math.min(1, Math.sqrt(h)));
+    return 12742000 * Math.asin(
+        Math.min(1, Math.sqrt(h))
+    );
 }
 
 function ordenarParadas(lista) {
@@ -600,9 +1034,10 @@ function ordenarParadas(lista) {
         let mejor = Infinity;
 
         pendientes.forEach((p, i) => {
-            const d = distanciaGeografica(actual, p);
-            if (d < mejor) {
-                mejor = d;
+            const distancia = distanciaGeografica(actual, p);
+
+            if (distancia < mejor) {
+                mejor = distancia;
                 indice = i;
             }
         });
@@ -617,31 +1052,46 @@ function ordenarParadas(lista) {
 
 async function calcularRecorrido() {
     if (!planta) {
-        alert('Ubica primero la planta.');
+        aviso(
+            'Primero debes ubicar la planta de producción.',
+            true
+        );
         return;
     }
 
     const lista = [...seleccion.values()];
 
     if (!lista.length) {
-        alert('Selecciona al menos un establecimiento.');
+        aviso(
+            'Selecciona al menos un establecimiento.',
+            true
+        );
         return;
     }
 
     if (!lista.every(coordenadaValida)) {
-        alert('Hay establecimientos sin coordenadas válidas.');
+        aviso(
+            'Hay establecimientos sin coordenadas válidas.',
+            true
+        );
         return;
     }
 
     const { litros, pendientes } = totalizar(lista);
 
     if (litros > CONFIG.capacidad) {
-        alert('Se supera la capacidad de 300 L.');
+        aviso(
+            'La ruta supera la capacidad del vehículo de 300 L.',
+            true
+        );
         return;
     }
 
     if (pendientes) {
-        alert('Existen establecimientos sin volumen estimado.');
+        aviso(
+            'Existen establecimientos sin volumen estimado.',
+            true
+        );
         return;
     }
 
@@ -662,49 +1112,67 @@ async function calcularRecorrido() {
         '?overview=full&geometries=geojson&steps=false';
 
     $('btn-calcular-recorrido').disabled = true;
-    mensaje('Calculando recorrido de ida y regreso a la planta...');
+
+    mensajeRuta(
+        'Calculando circuito de salida y regreso a la planta...'
+    );
 
     try {
         const respuesta = await fetch(url, {
             signal: controller.signal
         });
 
-        if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
-
-        const respuestaOSRM = await respuesta.json();
-        if (id !== solicitud) return;
-
-        if (
-            respuestaOSRM.code !== 'Ok' ||
-            !respuestaOSRM.routes?.length
-        ) {
-            throw new Error('El servicio no encontró un recorrido.');
+        if (!respuesta.ok) {
+            throw new Error(`HTTP ${respuesta.status}`);
         }
 
-        const ruta = respuestaOSRM.routes[0];
+        const json = await respuesta.json();
+
+        if (id !== solicitud) return;
+
+        if (json.code !== 'Ok' || !json.routes?.length) {
+            throw new Error('El servicio no encontró una ruta.');
+        }
+
+        const ruta = json.routes[0];
         const geometria = ruta.geometry?.coordinates;
 
-        if (!geometria?.length) throw new Error('Sin geometría vial');
+        if (!geometria?.length) {
+            throw new Error('El recorrido no tiene geometría.');
+        }
 
         lineaRuta = L.polyline(
             geometria.map(([lng, lat]) => [lat, lng]),
-            { color: '#2563eb', weight: 6, opacity: 0.9 }
+            {
+                color: '#2563eb',
+                weight: 6,
+                opacity: .9
+            }
         ).addTo(mapa);
 
         ordenActual = orden;
         actualizarPanelRuta();
 
-        const km = ruta.distance / 1000;
+        const kilometros = ruta.distance / 1000;
         const minutos = ruta.duration / 60;
 
-        escribir('ruta-distancia', `${km.toFixed(2)} km`);
-        escribir('ruta-tiempo', `${Math.round(minutos)} min`);
+        escribir(
+            'ruta-distancia',
+            `${kilometros.toFixed(2)} km`
+        );
 
+        escribir(
+            'ruta-tiempo',
+            `${Math.round(minutos)} min`
+        );
+
+        // Solo los escenarios de rutina alimentan
+        // la comparación histórica A/B.
         if (escenario === 'A' || escenario === 'B') {
             resultados[escenario] = {
                 paradas: orden.length,
                 litros,
-                kilometros: km,
+                kilometros,
                 minutos,
                 orden: orden.map(p => ({
                     id: p.id_denue,
@@ -718,29 +1186,43 @@ async function calcularRecorrido() {
             actualizarAnalitica();
         }
 
-        mensaje(
-            `Circuito calculado: ${km.toFixed(2)} km, ` +
+        mensajeRuta(
+            `Circuito calculado: ${kilometros.toFixed(2)} km, ` +
             `${Math.round(minutos)} min de conducción.`
         );
 
-        $('map').scrollIntoView({ behavior: 'smooth' });
+        aviso('Recorrido calculado correctamente.');
+
+        navegar('mapa');
+
         setTimeout(() => {
             mapa.invalidateSize();
+
             if (lineaRuta) {
                 mapa.fitBounds(lineaRuta.getBounds(), {
                     padding: [45, 45]
                 });
             }
-        }, 250);
+        }, 200);
 
     } catch (error) {
-        if (id !== solicitud || error.name === 'AbortError') return;
+        if (
+            id !== solicitud ||
+            error.name === 'AbortError'
+        ) return;
 
         console.error(error);
-        mensaje(
-            'No se pudo calcular la ruta. ' +
-            'Revisa la conexión y vuelve a intentar.'
+
+        mensajeRuta(
+            'No fue posible calcular el recorrido. ' +
+            'Revisa tu conexión e intenta nuevamente.'
         );
+
+        aviso(
+            'El servicio de rutas no respondió correctamente.',
+            true
+        );
+
     } finally {
         if (id === solicitud) {
             controlador = null;
@@ -749,7 +1231,13 @@ async function calcularRecorrido() {
     }
 }
 
-/* COMPARACIÓN */
+$('btn-calcular-recorrido').addEventListener(
+    'click', calcularRecorrido
+);
+
+/* ==========================================
+   COMPARACIÓN
+========================================== */
 
 function resumen(letra) {
     const lista = grupo(letra);
@@ -768,74 +1256,22 @@ function eficiencia(resultado) {
         : null;
 }
 
-function crearPanelComparacion() {
-    const panel = document.createElement('section');
-    panel.id = 'panel-comparacion';
-    panel.style.cssText = `
-        background:white;border:1px solid #dce8e0;
-        border-radius:16px;padding:22px;margin-top:24px`;
-
-    panel.innerHTML = `
-        <div class="d-flex flex-wrap justify-content-between
-                    align-items-center gap-3 mb-3">
-            <div>
-                <h3 class="h5 fw-bold mb-1">
-                    <i class="bi bi-bar-chart-line me-2"></i>
-                    Comparación de rutas
-                </h3>
-                <p class="small text-muted mb-0">
-                    Resultados de la simulación logística
-                </p>
-            </div>
-            <button id="btn-exportar-reporte" type="button"
-                class="btn btn-success btn-sm">
-                <i class="bi bi-file-earmark-spreadsheet"></i>
-                Exportar reporte CSV
-            </button>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Indicador</th><th>Ruta A</th><th>Ruta B</th>
-                    </tr>
-                </thead>
-                <tbody id="tabla-comparacion"></tbody>
-            </table>
-        </div>
-        <p id="conclusion-comparacion" class="small mb-2"></p>
-        <p class="small text-muted mb-0">
-            Volúmenes simulados. Las distancias y tiempos se
-            obtienen de OSRM al calcular cada ruta.
-        </p>`;
-
-    $('rutas').appendChild(panel);
-
-    $('btn-exportar-reporte').addEventListener(
-        'click',
-        exportarReporte
-    );
-
-    actualizarComparacion();
-}
-
 function actualizarComparacion() {
     const tbody = $('tabla-comparacion');
-    if (!tbody) return;
-
     tbody.replaceChildren();
 
     const a = resumen('A');
     const b = resumen('B');
+
     const ra = resultados.A;
     const rb = resultados.B;
+
     const ea = eficiencia(ra);
     const eb = eficiencia(rb);
 
     [
         ['Establecimientos', a.paradas, b.paradas],
         ['AVU estimado', `${a.litros} L`, `${b.litros} L`],
-        ['Capacidad', '300 L', '300 L'],
         [
             'Aprovechamiento',
             `${a.porcentaje.toFixed(1)}%`,
@@ -856,239 +1292,157 @@ function actualizarComparacion() {
             ea === null ? 'Pendiente' : `${ea.toFixed(2)} L/km`,
             eb === null ? 'Pendiente' : `${eb.toFixed(2)} L/km`
         ]
-    ].forEach(fila => crearFila(tbody, fila));
+    ].forEach(valores => fila(tbody, valores));
 
     let conclusion =
-        'Calcula ambos circuitos para completar la comparación.';
+        'Calcula las rutas A y B para comparar su eficiencia vial.';
 
     if (ea !== null && eb !== null) {
-        conclusion = Math.abs(ea - eb) < 0.001
-            ? 'Ambas rutas tienen una eficiencia similar en L/km.'
-            : `La Ruta ${ea > eb ? 'A' : 'B'} presenta mayor ` +
-              'volumen estimado por kilómetro. ' +
-              'Esto no equivale a menor costo total.';
+        conclusion = Math.abs(ea - eb) < .001
+            ? 'Ambas rutas tienen una eficiencia similar.'
+            : `La Ruta ${ea > eb ? 'A' : 'B'} presenta más ` +
+              'litros estimados por kilómetro. ' +
+              'Esto no implica necesariamente un menor costo.';
     }
 
     escribir('conclusion-comparacion', conclusion);
 }
 
-/* ANALÍTICA v2.3 */
+/* ==========================================
+   GRÁFICAS E INDICADORES
+========================================== */
 
-function crearPanelAnalitica() {
-    const panel = document.createElement('section');
-    panel.id = 'panel-analitica';
-    panel.style.cssText = `
-        background:white;border:1px solid #dce8e0;
-        border-radius:16px;padding:24px;margin-top:24px`;
+function tarjetaAnalitica(etiqueta, valor, detalle) {
+    const div = document.createElement('div');
+    div.className = 'analytics-card';
 
-    panel.innerHTML = `
-        <div class="mb-4">
-            <h3 class="h5 fw-bold mb-1">
-                <i class="bi bi-graph-up-arrow me-2"></i>
-                Panel de análisis logístico
-            </h3>
-            <p class="small text-muted mb-0">
-                Indicadores de los escenarios simulados
-            </p>
-        </div>
+    const label = document.createElement('span');
+    const numero = document.createElement('strong');
+    const nota = document.createElement('small');
 
-        <div id="indicadores-analitica"
-             class="row g-3 mb-4"></div>
-
-        <div class="row g-4">
-            <div class="col-12 col-lg-6">
-                <h4 class="h6 fw-bold mb-3">
-                    AVU estimado por ruta
-                </h4>
-                <div id="grafico-volumen"></div>
-            </div>
-            <div class="col-12 col-lg-6">
-                <h4 class="h6 fw-bold mb-3">
-                    Aprovechamiento del vehículo
-                </h4>
-                <div id="grafico-capacidad"></div>
-            </div>
-            <div class="col-12">
-                <h4 class="h6 fw-bold mb-3">
-                    Eficiencia de recolección
-                </h4>
-                <div id="grafico-eficiencia"></div>
-            </div>
-        </div>
-
-        <div id="lectura-analitica"
-             class="mt-4 p-3 rounded"
-             style="background:#f0f8f2;font-size:14px"></div>
-
-        <p class="small text-muted mt-3 mb-0">
-            Los datos de AVU son estimaciones, no volúmenes
-            recolectados o verificados. Los L/km representan
-            un indicador comparativo, no una optimización
-            certificada ni una medición de rentabilidad.
-        </p>`;
-
-    $('rutas').appendChild(panel);
-    actualizarAnalitica();
-}
-
-function tarjetaIndicador(etiqueta, valor, detalle) {
-    const col = document.createElement('div');
-    col.className = 'col-12 col-md-4';
-
-    const tarjeta = document.createElement('div');
-    tarjeta.style.cssText = `
-        background:#f8faf8;border:1px solid #e2ece4;
-        border-radius:12px;padding:18px;height:100%`;
-
-    const label = document.createElement('div');
-    label.style.cssText = 'font-size:12px;color:#64766a';
     label.textContent = etiqueta;
-
-    const numero = document.createElement('div');
-    numero.style.cssText = `
-        font-size:27px;font-weight:800;color:#173c29`;
     numero.textContent = valor;
-
-    const nota = document.createElement('div');
-    nota.style.cssText = 'font-size:12px;color:#64766a';
     nota.textContent = detalle;
 
-    tarjeta.append(label, numero, nota);
-    col.appendChild(tarjeta);
-
-    return col;
+    div.append(label, numero, nota);
+    return div;
 }
 
-function barraGrafico(etiqueta, valor, maximo, color, unidad) {
-    const bloque = document.createElement('div');
-    bloque.style.marginBottom = '20px';
+function barra(etiqueta, valor, maximo, clase, unidad) {
+    const contenedor = document.createElement('div');
+    contenedor.className = 'bar-item';
 
     const cabecera = document.createElement('div');
-    cabecera.style.cssText = `
-        display:flex;justify-content:space-between;
-        gap:12px;font-size:13px;margin-bottom:8px`;
+    cabecera.className = 'bar-heading';
 
-    const nombre = document.createElement('strong');
-    nombre.textContent = etiqueta;
+    const titulo = document.createElement('strong');
+    titulo.textContent = etiqueta;
 
     const cantidad = document.createElement('span');
     cantidad.textContent = `${valor.toFixed(2)} ${unidad}`;
 
-    cabecera.append(nombre, cantidad);
+    cabecera.append(titulo, cantidad);
 
     const pista = document.createElement('div');
-    pista.style.cssText = `
-        width:100%;height:18px;background:#edf1ee;
-        border-radius:10px;overflow:hidden`;
+    pista.className = 'bar-track';
 
     const relleno = document.createElement('div');
-    relleno.style.cssText = `
-        height:100%;background:${color};
-        border-radius:10px;transition:width .4s ease`;
+    relleno.className = `bar-fill ${clase}`;
 
     relleno.style.width =
         `${Math.min(100, maximo > 0 ? valor / maximo * 100 : 0)}%`;
 
     pista.appendChild(relleno);
-    bloque.append(cabecera, pista);
+    contenedor.append(cabecera, pista);
 
-    return bloque;
+    return contenedor;
 }
 
 function actualizarAnalitica() {
-    const indicadores = $('indicadores-analitica');
-    if (!indicadores) return;
-
     const a = resumen('A');
     const b = resumen('B');
+
     const ra = resultados.A;
     const rb = resultados.B;
+
     const ea = eficiencia(ra);
     const eb = eficiencia(rb);
 
-    indicadores.replaceChildren(
-        tarjetaIndicador(
+    $('indicadores-analitica').replaceChildren(
+        tarjetaAnalitica(
             'AVU total estimado',
             `${a.litros + b.litros} L`,
-            'Suma de los escenarios A y B'
+            'Suma de las rutas de rutina'
         ),
-        tarjetaIndicador(
+        tarjetaAnalitica(
             'Establecimientos',
-            `${a.paradas + b.paradas}`,
-            'Prospectos de ambas rutas'
+            a.paradas + b.paradas,
+            'Prospectos identificados'
         ),
-        tarjetaIndicador(
+        tarjetaAnalitica(
             'Circuitos calculados',
             `${Number(Boolean(ra)) + Number(Boolean(rb))}/2`,
-            'Con distancia y tiempo disponibles'
+            'Rutas con datos viales'
         )
     );
 
-    const volumenContenedor = $('grafico-volumen');
-    volumenContenedor.replaceChildren(
-        barraGrafico('Ruta A', a.litros, CONFIG.capacidad, '#21845b', 'L'),
-        barraGrafico('Ruta B', b.litros, CONFIG.capacidad, '#e3a008', 'L')
+    $('grafico-volumen').replaceChildren(
+        barra('Ruta A', a.litros, CONFIG.capacidad, 'green', 'L'),
+        barra('Ruta B', b.litros, CONFIG.capacidad, 'gold', 'L')
     );
 
-    const capacidadContenedor = $('grafico-capacidad');
-    capacidadContenedor.replaceChildren(
-        barraGrafico(
-            'Ruta A',
-            a.porcentaje,
-            100,
-            '#21845b',
-            '%'
-        ),
-        barraGrafico(
-            'Ruta B',
-            b.porcentaje,
-            100,
-            '#e3a008',
-            '%'
-        )
+    $('grafico-capacidad').replaceChildren(
+        barra('Ruta A', a.porcentaje, 100, 'green', '%'),
+        barra('Ruta B', b.porcentaje, 100, 'gold', '%')
     );
 
-    const eficienciaContenedor = $('grafico-eficiencia');
-    eficienciaContenedor.replaceChildren();
+    const contenedor = $('grafico-eficiencia');
+    contenedor.replaceChildren();
 
     if (ea === null || eb === null) {
-        const aviso = document.createElement('p');
-        aviso.className = 'text-muted small';
-        aviso.textContent =
-            'Calcula las rutas A y B para visualizar ' +
-            'la comparación de litros estimados por kilómetro.';
-        eficienciaContenedor.appendChild(aviso);
+        const p = document.createElement('p');
+        p.className = 'small text-muted mb-0';
+
+        p.textContent =
+            'Calcula ambas rutas de rutina para ' +
+            'visualizar los litros estimados por kilómetro.';
+
+        contenedor.appendChild(p);
     } else {
         const maximo = Math.max(ea, eb, 1);
 
-        eficienciaContenedor.append(
-            barraGrafico('Ruta A', ea, maximo, '#21845b', 'L/km'),
-            barraGrafico('Ruta B', eb, maximo, '#e3a008', 'L/km')
+        contenedor.append(
+            barra('Ruta A', ea, maximo, 'green', 'L/km'),
+            barra('Ruta B', eb, maximo, 'gold', 'L/km')
         );
     }
 
-    let lectura =
-        'La Ruta A tiene mayor volumen estimado que la Ruta B. ' +
-        'Calcula ambos circuitos para evaluar la eficiencia vial.';
+    escribir(
+        'lectura-analitica',
+        ea !== null && eb !== null
+            ? (
+                Math.abs(ea - eb) < .001
+                    ? 'Ambos circuitos presentan una eficiencia similar.'
+                    : `La Ruta ${ea > eb ? 'A' : 'B'} presenta ` +
+                      'mayor volumen estimado por kilómetro.'
+              )
+            : 'Las rutas A y B están preparadas. ' +
+              'Calcula sus circuitos para completar el análisis.'
+    );
 
-    if (ea !== null && eb !== null) {
-        const mejor = ea > eb ? 'A' : 'B';
-        lectura =
-            Math.abs(ea - eb) < 0.001
-                ? 'Ambas rutas presentan eficiencia similar en L/km.'
-                : `Según los recorridos calculados, la Ruta ${mejor} ` +
-                  'presenta más litros estimados por kilómetro. ' +
-                  'Este indicador no considera costos, tráfico ' +
-                  'ni tiempos de servicio.';
-    }
-
-    escribir('lectura-analitica', lectura);
+    $('dashboard-route-summary').replaceChildren(
+        barra('Ruta A', a.litros, CONFIG.capacidad, 'green', 'L'),
+        barra('Ruta B', b.litros, CONFIG.capacidad, 'gold', 'L')
+    );
 }
 
-/* REPORTE CSV */
+/* ==========================================
+   EXPORTACIÓN CSV
+========================================== */
 
 function csvSeguro(valor) {
     const original = String(valor ?? '');
+
     const seguro = /^[\s]*[=+\-@]/.test(original)
         ? "'" + original
         : original;
@@ -1097,22 +1451,24 @@ function csvSeguro(valor) {
 }
 
 function exportarReporte() {
-    if (!datos.length) {
-        alert('No hay datos para exportar.');
+    if (!establecimientos.length) {
+        aviso('No hay datos para exportar.', true);
         return;
     }
 
     const a = resumen('A');
     const b = resumen('B');
+
     const ra = resultados.A;
     const rb = resultados.B;
 
     const filas = [
-        ['BIOGIRO - Reporte académico de recolección'],
+        ['BIOGIRO - Circular Nexum Industries'],
+        ['Reporte académico de simulación logística'],
         ['Fecha', new Date().toLocaleString('es-MX')],
         ['Planta hipotética', CONFIG.direccion],
-        ['Capacidad por vehículo (L)', CONFIG.capacidad],
-        ['Nota', 'Volúmenes simulados; no recolecciones reales'],
+        ['Capacidad del vehículo (L)', CONFIG.capacidad],
+        ['Nota', 'Volúmenes simulados, no verificados'],
         [],
         ['Indicador', 'Ruta A', 'Ruta B'],
         ['Establecimientos', a.paradas, b.paradas],
@@ -1128,7 +1484,7 @@ function exportarReporte() {
             rb ? rb.kilometros.toFixed(2) : 'Pendiente'
         ],
         [
-            'Tiempo conducción (min)',
+            'Conducción (min)',
             ra ? ra.minutos.toFixed(1) : 'Pendiente',
             rb ? rb.minutos.toFixed(1) : 'Pendiente'
         ],
@@ -1146,6 +1502,7 @@ function exportarReporte() {
 
     ['A', 'B'].forEach(letra => {
         const r = resultados[letra];
+
         const lista = r
             ? r.orden
             : grupo(letra).map(p => ({
@@ -1155,32 +1512,41 @@ function exportarReporte() {
             }));
 
         filas.push([
-            letra, 0, '', 'Salida: Planta BIOGIRO',
+            letra, 0, '', 'Salida: Planta Circular Nexum',
             '', r ? 'Calculado' : 'Pendiente'
         ]);
 
         lista.forEach((p, i) => {
             filas.push([
-                letra, i + 1, p.id, p.nombre,
+                letra,
+                i + 1,
+                p.id,
+                p.nombre,
                 p.litros ?? 'Pendiente',
                 r ? 'Calculado' : 'Sin ordenar'
             ]);
         });
 
         filas.push([
-            letra, lista.length + 1, '',
-            'Regreso: Planta BIOGIRO', '',
+            letra,
+            lista.length + 1,
+            '',
+            'Regreso: Planta Circular Nexum',
+            '',
             r ? 'Calculado' : 'Pendiente'
         ]);
     });
 
     filas.push(
         [],
-        ['Nota', 'No se incluyen tráfico, carga, descarga ni costos.']
+        [
+            'Nota',
+            'No incluye tráfico, carga, descarga ni costos.'
+        ]
     );
 
-    const contenido = '\uFEFF' + filas.map(fila =>
-        fila.map(csvSeguro).join(';')
+    const contenido = '\uFEFF' + filas.map(f =>
+        f.map(csvSeguro).join(';')
     ).join('\r\n');
 
     const blob = new Blob([contenido], {
@@ -1189,6 +1555,7 @@ function exportarReporte() {
 
     const url = URL.createObjectURL(blob);
     const enlace = document.createElement('a');
+
     enlace.href = url;
     enlace.download =
         `BIOGIRO_Reporte_${new Date().toISOString().slice(0, 10)}.csv`;
@@ -1198,9 +1565,17 @@ function exportarReporte() {
     enlace.remove();
 
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    aviso('Reporte CSV exportado.');
 }
 
-/* CARGA DE DATOS */
+$('btn-exportar-reporte').addEventListener(
+    'click', exportarReporte
+);
+
+/* ==========================================
+   CARGA DE ESTABLECIMIENTOS
+========================================== */
 
 async function cargarEstablecimientos() {
     try {
@@ -1214,24 +1589,35 @@ async function cargarEstablecimientos() {
         }
 
         const json = await respuesta.json();
+
         if (!Array.isArray(json)) {
-            throw new Error('El JSON debe contener un arreglo.');
+            throw new Error('El JSON debe ser un arreglo.');
         }
 
-        datos = json;
+        establecimientos = json;
 
-        escribir('total-establecimientos', datos.length);
-        escribir('total-avu', `${totalizar(datos).litros} L`);
+        escribir(
+            'total-establecimientos',
+            establecimientos.length
+        );
+
+        escribir(
+            'total-avu',
+            `${totalizar(establecimientos).litros} L`
+        );
 
         escribir(
             'total-escenarios',
             new Set(
-                datos.map(p => p.ruta_simulada).filter(Boolean)
+                establecimientos
+                    .map(p => p.ruta_simulada)
+                    .filter(Boolean)
             ).size
         );
 
         ['A', 'B'].forEach(letra => {
             const lista = grupo(letra);
+
             escribir(
                 `resumen-ruta-${letra.toLowerCase()}`,
                 `${lista.length} paradas · ` +
@@ -1240,65 +1626,33 @@ async function cargarEstablecimientos() {
         });
 
         aplicarFiltros();
+        mostrarTablaManual();
         actualizarPanelRuta();
         actualizarComparacion();
         actualizarAnalitica();
 
         console.log(
-            'BIOGIRO v2.3 listo:',
-            datos.length,
+            'BIOGIRO v2.4 cargado:',
+            establecimientos.length,
             'establecimientos'
         );
 
     } catch (error) {
-        console.error('Error al cargar datos:', error);
-        mensaje(
+        console.error(error);
+
+        aviso(
             'No se pudieron cargar los establecimientos. ' +
-            'Comprueba Live Server y la consola.'
+            'Verifica Live Server y el archivo JSON.',
+            true
         );
     }
 }
 
-/* EVENTOS */
+/* ==========================================
+   INICIALIZACIÓN
+========================================== */
 
-$('buscar-establecimiento').addEventListener(
-    'input', aplicarFiltros
-);
-
-$('filtro-prioridad').addEventListener(
-    'change', aplicarFiltros
-);
-
-$('btn-ruta-a').addEventListener(
-    'click', () => cargarEscenario('A')
-);
-
-$('btn-ruta-b').addEventListener(
-    'click', () => cargarEscenario('B')
-);
-
-$('btn-ver-seleccion').addEventListener(
-    'click', mostrarSeleccionEnMapa
-);
-
-$('btn-calcular-recorrido').addEventListener(
-    'click', calcularRecorrido
-);
-
-$('btn-limpiar-ruta').addEventListener('click', () => {
-    invalidarRecorrido();
-    seleccion.clear();
-    activarEscenario(null);
-    mostrarTabla(visibles);
-    mostrarMarcadores(visibles, false);
-    actualizarPanelRuta();
-    mensaje('Selección limpiada.');
-});
-
-/* INICIO */
-
-crearPanelPlanta();
-crearPanelComparacion();
-crearPanelAnalitica();
+actualizarPanelRuta();
 cargarEstablecimientos();
 localizarPlanta();
+navegar('dashboard');

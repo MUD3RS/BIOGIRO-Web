@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="BIOGIRO: sistema de recolección de aceite vegetal usado en Pachuca.">
-    <title>BIOGIRO | Recolección AVU</title>
+    <meta name="description" content="BIOGIRO, sistema de gestión logística de aceite vegetal usado para Circular Nexum Industries.">
+    <title>BIOGIRO | Circular Nexum Industries</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -16,287 +16,734 @@
 
 <div class="app-shell">
 
-    <aside class="sidebar">
-        <a class="brand" href="#dashboard">
-            <i class="bi bi-recycle"></i> BIOGIRO
-        </a>
-        <p class="brand-caption">Sistema de recolección AVU</p>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="company-mark">
+                <i class="bi bi-arrow-repeat"></i>
+                <i class="bi bi-droplet-fill company-drop"></i>
+            </div>
 
-        <nav class="sidebar-nav">
-            <a href="#dashboard">
-                <i class="bi bi-speedometer2"></i> Panel de control
-            </a>
-            <a href="#mapa">
-                <i class="bi bi-geo-alt"></i> Mapa
-            </a>
-            <a href="#proveedores">
-                <i class="bi bi-shop"></i> Establecimientos
-            </a>
-            <a href="#rutas">
-                <i class="bi bi-truck"></i> Rutas simuladas
-            </a>
+            <div>
+                <span class="company-name">CIRCULAR NEXUM</span>
+                <span class="company-subname">INDUSTRIES</span>
+                <strong class="system-name">BIOGIRO</strong>
+                <small class="system-caption">Gestión logística de AVU</small>
+            </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <span class="nav-caption">PLATAFORMA</span>
+
+        <nav class="sidebar-nav" aria-label="Navegación principal">
+            <button type="button" class="nav-link active"
+                    data-view="dashboard" aria-current="page">
+                <i class="bi bi-grid-1x2"></i>
+                <span>Panel de control</span>
+            </button>
+
+            <button type="button" class="nav-link"
+                    data-view="rutas">
+                <i class="bi bi-truck"></i>
+                <span>Gestión de rutas</span>
+            </button>
+
+            <button type="button" class="nav-link"
+                    data-view="mapa">
+                <i class="bi bi-map"></i>
+                <span>Mapa interactivo</span>
+            </button>
+
+            <button type="button" class="nav-link"
+                    data-view="proveedores">
+                <i class="bi bi-shop"></i>
+                <span>Establecimientos</span>
+            </button>
+
+            <button type="button" class="nav-link"
+                    data-view="analisis">
+                <i class="bi bi-bar-chart-line"></i>
+                <span>Análisis y reportes</span>
+            </button>
+
+            <button type="button" class="nav-link"
+                    data-view="planta">
+                <i class="bi bi-building-gear"></i>
+                <span>Planta de producción</span>
+            </button>
         </nav>
 
-        <p class="sidebar-note">
-            <i class="bi bi-leaf"></i> Dale otra vida al aceite
-        </p>
+        <div class="sidebar-bottom">
+            <div class="sidebar-status">
+                <span class="status-dot"></span>
+                Prototipo académico
+            </div>
+
+            <p class="sidebar-slogan">
+                Cada proceso crea posibilidades.
+            </p>
+
+            <small>BIOGIRO v2.4</small>
+        </div>
     </aside>
 
-    <main class="main-content" id="dashboard">
+    <div class="mobile-overlay" id="mobile-overlay"></div>
 
-        <header class="page-header">
-            <div>
-                <span class="eyebrow">BIOGIRO / DEMOSTRACIÓN ACADÉMICA</span>
-                <h1>Panel de control</h1>
-                <p>Planificación de recolección de aceite vegetal usado en Pachuca, Hidalgo.</p>
+    <main class="main-content">
+
+        <header class="topbar">
+            <div class="topbar-left">
+                <button type="button" class="menu-toggle"
+                        id="menu-toggle"
+                        aria-label="Abrir menú"
+                        aria-expanded="false"
+                        aria-controls="sidebar">
+                    <i class="bi bi-list"></i>
+                </button>
+
+                <div>
+                    <span class="eyebrow">CIRCULAR NEXUM INDUSTRIES</span>
+                    <h1 id="page-title">Panel de control</h1>
+                    <p id="page-description">
+                        Resumen operativo del sistema BIOGIRO.
+                    </p>
+                </div>
             </div>
+
             <span class="version-pill">
-                <i class="bi bi-code-slash"></i> Prototipo v2.0
+                <i class="bi bi-cpu"></i>
+                Versión 2.4
             </span>
         </header>
 
-        <!-- INDICADORES -->
-        <section class="stats-grid">
-            <article class="stat-card">
-                <span class="stat-icon green">
-                    <i class="bi bi-shop"></i>
-                </span>
-                <div>
-                    <p>Establecimientos identificados</p>
-                    <strong id="total-establecimientos">0</strong>
-                    <small>Registros del directorio piloto</small>
-                </div>
-            </article>
+        <div id="app-notice" class="app-notice" role="status"
+             aria-live="polite" hidden></div>
 
-            <article class="stat-card">
-                <span class="stat-icon amber">
-                    <i class="bi bi-droplet-half"></i>
-                </span>
-                <div>
-                    <p>AVU simulado total</p>
-                    <strong id="total-avu">0 L</strong>
-                    <small>Volúmenes hipotéticos, no verificados</small>
-                </div>
-            </article>
+        <!-- PANEL DE CONTROL -->
+        <section class="app-view active" id="dashboard"
+                 data-title="Panel de control"
+                 data-description="Resumen operativo del sistema BIOGIRO.">
 
-            <article class="stat-card">
-                <span class="stat-icon blue">
-                    <i class="bi bi-sign-turn-right"></i>
-                </span>
+            <div class="welcome-banner">
                 <div>
-                    <p>Escenarios preparados</p>
-                    <strong id="total-escenarios">0</strong>
-                    <small>Rutas A y B para demostración</small>
+                    <span class="banner-kicker">CENTRO DE OPERACIONES</span>
+                    <h2>Bienvenido a BIOGIRO</h2>
+                    <p>
+                        Plataforma de simulación logística para
+                        la recolección de aceite vegetal usado
+                        en Pachuca, Hidalgo.
+                    </p>
+                    <button type="button" class="btn btn-light"
+                            data-go="rutas">
+                        Gestionar rutas
+                        <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
                 </div>
-            </article>
+                <i class="bi bi-recycle banner-symbol"></i>
+            </div>
+
+            <div class="stats-grid">
+                <article class="stat-card">
+                    <span class="stat-icon green">
+                        <i class="bi bi-shop"></i>
+                    </span>
+                    <div>
+                        <p>Establecimientos identificados</p>
+                        <strong id="total-establecimientos">0</strong>
+                        <small>Directorio piloto</small>
+                    </div>
+                </article>
+
+                <article class="stat-card">
+                    <span class="stat-icon amber">
+                        <i class="bi bi-droplet-half"></i>
+                    </span>
+                    <div>
+                        <p>AVU total estimado</p>
+                        <strong id="total-avu">0 L</strong>
+                        <small>Volumen simulado</small>
+                    </div>
+                </article>
+
+                <article class="stat-card">
+                    <span class="stat-icon blue">
+                        <i class="bi bi-signpost-split"></i>
+                    </span>
+                    <div>
+                        <p>Rutas de rutina</p>
+                        <strong id="total-escenarios">0</strong>
+                        <small>Escenarios preparados</small>
+                    </div>
+                </article>
+            </div>
+
+            <div class="dashboard-grid">
+                <article class="panel">
+                    <div class="section-heading">
+                        <div>
+                            <h2>Resumen de recolección</h2>
+                            <p>Distribución del volumen estimado.</p>
+                        </div>
+                    </div>
+
+                    <div id="dashboard-route-summary"></div>
+                </article>
+
+                <article class="panel">
+                    <div class="section-heading">
+                        <div>
+                            <h2>Accesos rápidos</h2>
+                            <p>Continúa con las operaciones.</p>
+                        </div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <button type="button" data-go="rutas">
+                            <i class="bi bi-truck"></i>
+                            <span>Planificar recolección</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+
+                        <button type="button" data-go="proveedores">
+                            <i class="bi bi-shop"></i>
+                            <span>Consultar establecimientos</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+
+                        <button type="button" data-go="analisis">
+                            <i class="bi bi-graph-up"></i>
+                            <span>Consultar indicadores</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+
+                        <button type="button" data-go="planta">
+                            <i class="bi bi-building-gear"></i>
+                            <span>Ubicación de la planta</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                </article>
+            </div>
+
+            <div class="info-strip">
+                <i class="bi bi-info-circle"></i>
+                Los datos corresponden a una simulación académica.
+                No representan contratos ni recolecciones verificadas.
+            </div>
+        </section>
+
+        <!-- GESTIÓN DE RUTAS -->
+        <section class="app-view" id="rutas"
+                 data-title="Gestión de rutas"
+                 data-description="Planifica recorridos de rutina o recolecciones extraordinarias.">
+
+            <div class="panel">
+                <div class="section-heading">
+                    <div>
+                        <h2>Planificación de recolección</h2>
+                        <p>
+                            Organiza circuitos con salida y regreso
+                            a la planta.
+                        </p>
+                    </div>
+                    <span class="section-tag">
+                        <i class="bi bi-truck"></i> 300 L por vehículo
+                    </span>
+                </div>
+
+                <div class="route-tabs" role="tablist"
+                     aria-label="Tipo de ruta">
+                    <button type="button" id="tab-rutina"
+                            class="route-tab active"
+                            role="tab" aria-selected="true"
+                            aria-controls="panel-rutina">
+                        <i class="bi bi-calendar-check"></i>
+                        Rutas de rutina
+                    </button>
+
+                    <button type="button" id="tab-manual"
+                            class="route-tab"
+                            role="tab" aria-selected="false"
+                            aria-controls="panel-manual">
+                        <i class="bi bi-sliders"></i>
+                        Rutas manuales
+                    </button>
+                </div>
+
+                <div id="panel-rutina" class="route-tab-content">
+                    <div class="route-intro">
+                        <h3>Escenarios habituales</h3>
+                        <p>
+                            Selecciona uno de los recorridos
+                            previamente preparados.
+                        </p>
+                    </div>
+
+                    <div class="scenario-grid">
+                        <button type="button" id="btn-ruta-a"
+                                class="scenario-button"
+                                aria-pressed="false">
+                            <i class="bi bi-signpost-split"></i>
+                            <span>
+                                <strong>Ruta A</strong>
+                                <small id="resumen-ruta-a">
+                                    Cargando escenario...
+                                </small>
+                            </span>
+                        </button>
+
+                        <button type="button" id="btn-ruta-b"
+                                class="scenario-button"
+                                aria-pressed="false">
+                            <i class="bi bi-signpost-split"></i>
+                            <span>
+                                <strong>Ruta B</strong>
+                                <small id="resumen-ruta-b">
+                                    Cargando escenario...
+                                </small>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="panel-manual" class="route-tab-content"
+                     hidden>
+                    <div class="route-intro">
+                        <h3>Recolección extraordinaria</h3>
+                        <p>
+                            Selecciona establecimientos y registra
+                            el volumen disponible actualmente,
+                            sin modificar su estimación habitual.
+                        </p>
+                    </div>
+
+                    <div class="manual-toolbar">
+                        <label for="manual-buscar">
+                            Buscar establecimiento
+                        </label>
+                        <input type="search" id="manual-buscar"
+                               placeholder="Buscar por nombre o ID DENUE..."
+                               autocomplete="off">
+
+                        <span id="manual-contador"
+                              class="result-count"></span>
+                    </div>
+
+                    <div class="table-responsive manual-table-wrap">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Agregar</th>
+                                    <th>Establecimiento</th>
+                                    <th>Habitual</th>
+                                    <th>Disponible hoy (L)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-manual"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="manual-summary">
+                        <span>
+                            <strong id="manual-total-paradas">0</strong>
+                            establecimientos seleccionados
+                        </span>
+                        <span>
+                            <strong id="manual-total-litros">0 L</strong>
+                            disponibles
+                        </span>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <button type="button" id="btn-aplicar-manual"
+                                class="btn btn-success">
+                            <i class="bi bi-check2-circle"></i>
+                            Preparar ruta manual
+                        </button>
+
+                        <button type="button" id="btn-limpiar-manual"
+                                class="btn btn-outline-secondary">
+                            Limpiar ruta manual
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="section-heading">
+                    <div>
+                        <h2>Recorrido seleccionado</h2>
+                        <p id="tipo-ruta-activa">
+                            Ningún recorrido seleccionado.
+                        </p>
+                    </div>
+                    <span class="section-tag">
+                        Circuito completo
+                    </span>
+                </div>
+
+                <div class="route-metrics">
+                    <div>
+                        <span>Paradas</span>
+                        <strong id="ruta-total-paradas">0</strong>
+                    </div>
+                    <div>
+                        <span>AVU seleccionado</span>
+                        <strong id="ruta-total-litros">0 L</strong>
+                    </div>
+                    <div>
+                        <span>Capacidad</span>
+                        <strong id="ruta-capacidad">300 L</strong>
+                    </div>
+                    <div>
+                        <span>Distancia vial</span>
+                        <strong id="ruta-distancia">Sin calcular</strong>
+                    </div>
+                    <div>
+                        <span>Conducción</span>
+                        <strong id="ruta-tiempo">Sin calcular</strong>
+                    </div>
+                </div>
+
+                <div class="capacity-label">
+                    <span>Ocupación estimada del vehículo</span>
+                    <strong id="ruta-porcentaje">0%</strong>
+                </div>
+
+                <div class="progress">
+                    <div id="ruta-progreso" class="progress-bar"
+                         role="progressbar" aria-valuemin="0"
+                         aria-valuemax="100" aria-valuenow="0"
+                         style="width:0%"></div>
+                </div>
+
+                <div class="route-actions">
+                    <button type="button" id="btn-calcular-recorrido"
+                            class="btn btn-success">
+                        <i class="bi bi-sign-turn-right"></i>
+                        Calcular recorrido
+                    </button>
+
+                    <button type="button" id="btn-ver-seleccion"
+                            class="btn btn-outline-success">
+                        <i class="bi bi-map"></i>
+                        Ver en el mapa
+                    </button>
+
+                    <button type="button" id="btn-limpiar-ruta"
+                            class="btn btn-outline-danger">
+                        <i class="bi bi-trash"></i>
+                        Limpiar selección
+                    </button>
+                </div>
+
+                <p id="estado-recorrido" class="route-status"
+                   role="status" aria-live="polite">
+                    Selecciona una ruta para comenzar.
+                </p>
+
+                <h3 class="stops-title">
+                    Orden de recolección
+                    <span class="subtle">
+                        Aproximación por cercanía geográfica
+                    </span>
+                </h3>
+
+                <ol id="lista-ruta" class="stops-list">
+                    <li>Selecciona una ruta para comenzar.</li>
+                </ol>
+
+                <p class="disclaimer">
+                    <i class="bi bi-info-circle"></i>
+                    Los volúmenes son simulados. Los circuitos
+                    incluyen salida y regreso a la planta.
+                    El orden se aproxima por cercanía y no
+                    garantiza la ruta vial óptima.
+                </p>
+            </div>
         </section>
 
         <!-- MAPA -->
-        <section class="panel" id="mapa">
-            <div class="section-heading">
-                <div>
-                    <h2>Mapa de establecimientos</h2>
-                    <p>Visualización geográfica de proveedores potenciales.</p>
+        <section class="app-view" id="mapa"
+                 data-title="Mapa interactivo"
+                 data-description="Visualiza establecimientos, planta y recorridos.">
+
+            <div class="panel">
+                <div class="section-heading">
+                    <div>
+                        <h2>Mapa de recolección</h2>
+                        <p>
+                            Ubicación de establecimientos y
+                            circuitos de BIOGIRO.
+                        </p>
+                    </div>
+
+                    <span class="section-tag">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        Pachuca, Hidalgo
+                    </span>
                 </div>
-                <span class="section-tag">
-                    <i class="bi bi-geo-alt-fill"></i> Pachuca Centro
-                </span>
-            </div>
 
-            <div class="map-legend">
-                <span>
-                    <i class="bi bi-geo-alt-fill green-text"></i>
-                    No seleccionado
-                </span>
-                <span>
-                    <i class="bi bi-geo-alt-fill amber-text"></i>
-                    Seleccionado
-                </span>
-                <span>
-                    <span class="line-sample"></span>
-                    Recorrido vial calculado
-                </span>
-            </div>
-
-            <div id="map" aria-label="Mapa interactivo de Pachuca"></div>
-
-            <p class="hint">
-                Los marcadores utilizan coordenadas del archivo de establecimientos.
-                El cálculo vial requiere conexión a Internet.
-            </p>
-        </section>
-
-        <!-- DIRECTORIO -->
-        <section class="panel" id="proveedores">
-            <div class="section-heading">
-                <div>
-                    <h2>Directorio de establecimientos</h2>
-                    <p>Busca, filtra y selecciona paradas para planificar un recorrido.</p>
+                <div class="map-legend">
+                    <span>
+                        <i class="bi bi-geo-alt-fill green-text"></i>
+                        No seleccionado
+                    </span>
+                    <span>
+                        <i class="bi bi-geo-alt-fill amber-text"></i>
+                        Seleccionado
+                    </span>
+                    <span>
+                        <i class="bi bi-building-gear green-text"></i>
+                        Planta
+                    </span>
+                    <span>
+                        <span class="line-sample"></span>
+                        Circuito calculado
+                    </span>
                 </div>
-            </div>
 
-            <div class="filters">
-                <label class="search-box">
-                    <i class="bi bi-search"></i>
-                    <input
-                        type="search"
-                        id="buscar-establecimiento"
-                        placeholder="Buscar nombre, actividad o ID DENUE..."
-                        autocomplete="off"
-                        aria-label="Buscar establecimientos">
-                </label>
+                <div id="map" aria-label="Mapa interactivo de Pachuca"></div>
 
-                <select id="filtro-prioridad" aria-label="Filtrar por prioridad">
-                    <option value="todos">Todas las prioridades</option>
-                    <option value="Alta">Prioridad alta</option>
-                    <option value="Media">Prioridad media</option>
-                    <option value="Baja">Prioridad baja</option>
-                    <option value="Sin evaluar">Sin evaluar</option>
-                </select>
+                <div class="map-actions">
+                    <button type="button" id="btn-centrar-mapa"
+                            class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-arrows-fullscreen"></i>
+                        Mostrar establecimientos
+                    </button>
 
-                <span id="contador-resultados" class="result-count">
-                    0 resultados
-                </span>
-            </div>
+                    <button type="button" data-go="rutas"
+                            class="btn btn-success btn-sm">
+                        <i class="bi bi-truck"></i>
+                        Gestionar rutas
+                    </button>
+                </div>
 
-            <div class="table-responsive">
-                <table class="table align-middle">
-                    <thead>
-                        <tr>
-                            <th>Seleccionar</th>
-                            <th>Establecimiento</th>
-                            <th>Actividad</th>
-                            <th>AVU simulado</th>
-                            <th>Prioridad</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-establecimientos">
-                        <tr>
-                            <td colspan="6">Cargando...</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <p class="hint">
+                    Las coordenadas proceden del directorio piloto.
+                    El trazado vial requiere Internet y utiliza
+                    un servicio público de demostración.
+                </p>
             </div>
         </section>
 
-        <!-- PLANIFICACIÓN -->
-        <section class="panel" id="rutas">
-            <div class="section-heading">
-                <div>
-                    <h2>Planificación de rutas</h2>
-                    <p>Selecciona una simulación o construye tu propia ruta desde la tabla.</p>
-                </div>
-                <span class="section-tag">Capacidad simulada: 300 L</span>
-            </div>
+        <!-- ESTABLECIMIENTOS -->
+        <section class="app-view" id="proveedores"
+                 data-title="Establecimientos"
+                 data-description="Directorio de posibles generadores de aceite vegetal usado.">
 
-            <div class="scenario-grid">
-                <button
-                    type="button"
-                    id="btn-ruta-a"
-                    class="scenario-button"
-                    aria-pressed="false">
-                    <i class="bi bi-signpost-split"></i>
-                    <span>
-                        <strong>Ruta A</strong>
-                        <small id="resumen-ruta-a">Cargar escenario A</small>
-                    </span>
-                </button>
+            <div class="panel">
+                <div class="section-heading">
+                    <div>
+                        <h2>Directorio de establecimientos</h2>
+                        <p>
+                            Consulta los registros y sus volúmenes
+                            estimados.
+                        </p>
+                    </div>
+                    <span class="section-tag">Directorio piloto</span>
+                </div>
 
-                <button
-                    type="button"
-                    id="btn-ruta-b"
-                    class="scenario-button"
-                    aria-pressed="false">
-                    <i class="bi bi-signpost-split"></i>
-                    <span>
-                        <strong>Ruta B</strong>
-                        <small id="resumen-ruta-b">Cargar escenario B</small>
-                    </span>
-                </button>
-            </div>
+                <div class="filters">
+                    <label class="search-box">
+                        <i class="bi bi-search"></i>
+                        <input type="search"
+                               id="buscar-establecimiento"
+                               placeholder="Buscar nombre, actividad o ID DENUE..."
+                               autocomplete="off"
+                               aria-label="Buscar establecimientos">
+                    </label>
 
-            <div class="route-metrics">
-                <div>
-                    <span>Paradas seleccionadas</span>
-                    <strong id="ruta-total-paradas">0</strong>
-                </div>
-                <div>
-                    <span>AVU estimado seleccionado</span>
-                    <strong id="ruta-total-litros">0 L</strong>
-                </div>
-                <div>
-                    <span>Capacidad del vehículo</span>
-                    <strong id="ruta-capacidad">300 L</strong>
-                </div>
-                <div>
-                    <span>Distancia por calles</span>
-                    <strong id="ruta-distancia">Sin calcular</strong>
-                </div>
-                <div>
-                    <span>Conducción estimada</span>
-                    <strong id="ruta-tiempo">Sin calcular</strong>
-                </div>
-            </div>
+                    <select id="filtro-prioridad"
+                            aria-label="Filtrar por prioridad">
+                        <option value="todos">Todas las prioridades</option>
+                        <option value="Alta">Prioridad alta</option>
+                        <option value="Media">Prioridad media</option>
+                        <option value="Baja">Prioridad baja</option>
+                        <option value="Sin evaluar">Sin evaluar</option>
+                    </select>
 
-            <div class="capacity-label">
-                <span>Ocupación estimada del vehículo</span>
-                <strong id="ruta-porcentaje">0%</strong>
-            </div>
+                    <span id="contador-resultados"
+                          class="result-count">0 resultados</span>
+                </div>
 
-            <div class="progress">
-                <div
-                    id="ruta-progreso"
-                    class="progress-bar"
-                    role="progressbar"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    aria-valuenow="0"
-                    style="width: 0%">
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Seleccionar</th>
+                                <th>Establecimiento</th>
+                                <th>Actividad</th>
+                                <th>AVU simulado</th>
+                                <th>Prioridad</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-establecimientos">
+                            <tr>
+                                <td colspan="6">Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="directory-actions">
+                    <p class="small text-muted mb-0">
+                        La selección del directorio prepara una
+                        ruta manual con los volúmenes habituales.
+                    </p>
+
+                    <button type="button" id="btn-ir-ruta"
+                            class="btn btn-success btn-sm">
+                        <i class="bi bi-truck"></i>
+                        Ir a la ruta seleccionada
+                    </button>
                 </div>
             </div>
+        </section>
 
-            <div class="route-actions">
-                <button type="button" id="btn-calcular-recorrido" class="btn btn-success">
-                    <i class="bi bi-sign-turn-right"></i>
-                    Calcular recorrido por calles
-                </button>
+        <!-- ANÁLISIS -->
+        <section class="app-view" id="analisis"
+                 data-title="Análisis y reportes"
+                 data-description="Compara indicadores de las rutas de rutina.">
 
-                <button type="button" id="btn-ver-seleccion" class="btn btn-outline-success">
-                    <i class="bi bi-geo-alt-fill"></i>
-                    Ver selección en mapa
-                </button>
+            <div class="panel">
+                <div class="section-heading">
+                    <div>
+                        <h2>Comparación de rutas de rutina</h2>
+                        <p>
+                            Resultados simulados de los circuitos A y B.
+                        </p>
+                    </div>
 
-                <button type="button" id="btn-limpiar-ruta" class="btn btn-outline-danger">
-                    <i class="bi bi-trash"></i>
-                    Limpiar selección
-                </button>
+                    <button type="button" id="btn-exportar-reporte"
+                            class="btn btn-success btn-sm">
+                        <i class="bi bi-file-earmark-spreadsheet"></i>
+                        Exportar CSV
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead>
+                            <tr>
+                                <th>Indicador</th>
+                                <th>Ruta A</th>
+                                <th>Ruta B</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-comparacion"></tbody>
+                    </table>
+                </div>
+
+                <p id="conclusion-comparacion"
+                   class="analysis-conclusion"></p>
             </div>
 
-            <p id="estado-recorrido" class="route-status" role="status" aria-live="polite">
-                Selecciona una ruta para comenzar.
-            </p>
+            <div class="panel">
+                <div class="section-heading">
+                    <div>
+                        <h2>Panel de análisis logístico</h2>
+                        <p>Visualización de los escenarios preparados.</p>
+                    </div>
+                </div>
 
-            <h3 class="stops-title">
-                Proveedores seleccionados
-                <span class="subtle">(orden provisional por cercanía)</span>
-            </h3>
+                <div id="indicadores-analitica"
+                     class="analytics-indicators"></div>
 
-            <ol id="lista-ruta" class="stops-list">
-                <li>Selecciona establecimientos desde la tabla o carga una simulación.</li>
-            </ol>
+                <div class="analytics-grid">
+                    <div class="chart-card">
+                        <h3>AVU estimado por ruta</h3>
+                        <div id="grafico-volumen"></div>
+                    </div>
 
-            <p class="disclaimer">
-                <i class="bi bi-info-circle"></i>
-                Los volúmenes, prioridades y asignaciones de ruta son simulaciones académicas.
-                El trazado vial utiliza un servicio público de prueba y no representa
-                optimización logística, tráfico real ni compromisos de recolección.
-                No incluye salida ni retorno a una planta.
-            </p>
+                    <div class="chart-card">
+                        <h3>Aprovechamiento del vehículo</h3>
+                        <div id="grafico-capacidad"></div>
+                    </div>
+
+                    <div class="chart-card full">
+                        <h3>Eficiencia de recolección</h3>
+                        <div id="grafico-eficiencia"></div>
+                    </div>
+                </div>
+
+                <div id="lectura-analitica"
+                     class="analysis-conclusion"></div>
+
+                <p class="hint">
+                    La distancia y el tiempo solo se muestran
+                    después de calcular cada ruta.
+                    No se consideran tráfico, carga, descarga
+                    ni costos operativos.
+                </p>
+            </div>
+        </section>
+
+        <!-- PLANTA -->
+        <section class="app-view" id="planta"
+                 data-title="Planta de producción"
+                 data-description="Punto hipotético de salida y regreso de los circuitos.">
+
+            <div class="panel">
+                <div class="section-heading">
+                    <div>
+                        <h2>Planta Circular Nexum Industries</h2>
+                        <p>
+                            Punto logístico utilizado por BIOGIRO.
+                        </p>
+                    </div>
+                    <span class="section-tag">Ubicación hipotética</span>
+                </div>
+
+                <div class="plant-hero">
+                    <div class="plant-icon">
+                        <i class="bi bi-building-gear"></i>
+                    </div>
+
+                    <div>
+                        <h3>Centro de operaciones</h3>
+                        <p>
+                            Calle Mariano Abasolo 609, Centro,
+                            Pachuca de Soto, Hidalgo, México.
+                        </p>
+                        <small>
+                            La ubicación geográfica puede ser
+                            aproximada y ajustarse manualmente.
+                        </small>
+                    </div>
+                </div>
+
+                <p id="estado-planta" class="route-status"
+                   role="status" aria-live="polite">
+                    Buscando ubicación...
+                </p>
+
+                <div class="route-actions">
+                    <button type="button" id="btn-ver-planta"
+                            class="btn btn-success" disabled>
+                        <i class="bi bi-geo-alt"></i>
+                        Ver planta en el mapa
+                    </button>
+
+                    <button type="button" id="btn-ajustar-planta"
+                            class="btn btn-outline-secondary">
+                        <i class="bi bi-crosshair"></i>
+                        Ajustar ubicación
+                    </button>
+                </div>
+
+                <div class="info-strip mt-4">
+                    <i class="bi bi-info-circle"></i>
+                    Cambiar la ubicación de la planta invalida
+                    las distancias previamente calculadas.
+                </div>
+            </div>
         </section>
 
         <footer class="footer">
-            BIOGIRO © 2026 · Prototipo académico · Datos de establecimientos: DENUE / My Maps
+            Circular Nexum Industries · BIOGIRO © 2026 ·
+            Prototipo académico · Datos piloto DENUE / My Maps
         </footer>
     </main>
 </div>
